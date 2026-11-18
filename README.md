@@ -27,7 +27,8 @@ To work out that AD-12 was the adapter I had to open Inventory. To learn that Le
 4. **Needs attention, built from the slips.** Every item that is overdue or left out of a partly returned kit is listed at the top, with the borrower, current holder, due time, why it needs attention and the next action. It is not a separate handover page, so it cannot drift from the records. On Saturday morning this list is the handover.
 5. **Quick check-in by label.** Type or scan the unit ID of whatever is on the counter. The app finds its open slip by itself. If the ID is unknown or has no open slip (Leela hands over AD-15), it says so and **changes nothing**. Per-slip check-in asks for the label ID too.
 6. **Who returned it, who received it, what state it is in.** Each return records the person handing it back, the desk shift that took it, and its condition. A damaged unit is accounted for but goes to the workshop, not back on the shelf.
-7. **Undo that keeps history.** Undo reopens the slip and restores stock, and adds a correction line to the slip's history instead of deleting the return. Every slip has an append-only history: issued, holder changed, returned, corrected.
+7. **Desk metrics.** A small panel that counts the success measure described below, so the change can be judged on numbers.
+8. **Undo that keeps history.** Undo reopens the slip and restores stock, and adds a correction line to the slip's history instead of deleting the return. Every slip has an append-only history: issued, holder changed, returned, corrected.
 
 These follow six rules I held the build to: an item cannot be returned without being identified; a kit is complete only when every issued unit is back; a change of holder never overwrites the borrower; a returned item is not automatically available; one return updates the slip, the kit, stock and Needs attention together; and a correction never erases what happened.
 
@@ -59,6 +60,8 @@ To choose between options I ranked failure modes by severity, how often they hap
 **At the morning handover, can the incoming staff member close the right slip for an item from a partly returned kit without opening the desk book or Inventory, and without asking the previous shift?**
 
 I would watch one week of morning shifts with the old flow and one week with Open kits. For each incomplete kit I would note whether they had to look elsewhere or ask someone, how long it took from the item arriving to the slip being closed, and whether the wrong slip was ever closed. If the change helps, the looking around and the calls to the previous shift should mostly disappear.
+
+**The prototype measures this itself.** The bottom of Open kits has a **Desk metrics** panel. It counts slips that needed attention when a shift began and were closed during it, and how many of those were closed without the staff member opening Inventory or the Desk book. It also counts wrong or unknown IDs that were blocked and check-ins that were undone. An undone close is taken back out of the count, so the numbers cannot be inflated by mistakes. I added this last because a feature only counts once it moves a number. Of everything left, it was the cheapest way to make the success test something the desk can read off a screen instead of a claim in a README.
 
 ### Files changed
 

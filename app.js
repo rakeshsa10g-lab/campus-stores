@@ -129,6 +129,17 @@
     // Units checked in as damaged. They are accounted for but stay out of stock.
     damaged: [],
     quickError: "",
+    // Counter metrics for the success test: were handover items closed
+    // without the staff member having to look in Inventory or the Desk book?
+    metrics: {
+      blocked: 0,
+      undone: 0,
+      closed: 0,
+      clean: 0,
+      peeked: false,
+      // Slips that needed attention when the current shift began.
+      carried: [],
+    },
     editing: false,
     onlyOpen: true,
     // Inline form open on a kit or slip: {kind: "issue", req} or {kind: "checkin" | "custody", num}.
@@ -143,6 +154,8 @@
   const getReq = (id) => requests.find((x) => x.id === id);
   const out = (id) => s.loans.find((l) => l.asset === id && !l.back);
   const now = () => shifts[s.phase];
+  const flaggedLoan = (l) =>
+    !l.back && (isLate(l) || s.loans.some((o) => o.req === l.req && o.back));
   const inRepair = (a) => a.repair || s.damaged.includes(a.id);
   // Append-only slip history. Corrections add a line; nothing is deleted.
   const log = (l, text) =>
@@ -437,11 +450,7 @@
       "Open kits",
       "One card per approved request · what left the desk, who has it, what is still out",
     );
-    const flagged = s.loans.filter(
-      (l) =>
-        !l.back &&
-        (isLate(l) || s.loans.some((o) => o.req === l.req && o.back)),
-    );
+    const flagged = s.loans.filter(flaggedLoan);
     if (flagged.length)
       html +=
         '<div class="attention"><b>Needs attention</b>' +
@@ -488,7 +497,21 @@
         ? '<p class="err" role="alert">' + esc(s.quickError) + "</p>"
         : "") +
       '<div class="buttons"><button type="submit" class="primary">Check in</button></div></form>';
-    return html + requests.map(kitCard).join("");
+    const m = s.metrics;
+    return (
+      html +
+      requests.map(kitCard).join("") +
+      '<div class="metrics"><b>Desk metrics</b><small>What I would track at a real counter to see if this helps.</small><dl>' +
+      [
+        ["Handover items closed", m.closed],
+        ["closed without opening Inventory or Desk book", m.clean],
+        ["Wrong or unknown IDs blocked", m.blocked],
+        ["Check-ins undone", m.undone],
+      ]
+        .map(([k, v]) => "<div><dt>" + esc(k) + "</dt><dd>" + v + "</dd></div>")
+        .join("") +
+      "</dl></div>"
+    );
   }
   function requestPage() {
     let html = head(
@@ -710,12 +733,15 @@
         break;
       case "advance":
         if (s.phase < 2) s.phase++;
+        s.metrics.carried = s.loans.filter(flaggedLoan).map((l) => l.num);
         s.form = null;
         s.quickError = "";
         s.undo = 0;
+        s.metrics.peeked = false;
         s.notice = "Shift time updated.";
         break;
       case "tab":
+        if (v === "Inventory" || v === "Desk book") s.metrics.peeked = true;
         s.tab = v;
         s.editing = false;
         s.form = null;
@@ -752,6 +778,13 @@
         s.undo = 0;
         if (!l || !l.back) break;
         l.back = false;
+        s.metrics.undone++;
+        if (l.metric) {
+          s.metrics.closed--;
+          if (l.metric === "clean") s.metrics.clean--;
+          s.metrics.carried.push(l.num);
+          delete l.metric;
+        }
         if (l.damagedOnReturn)
           s.damaged = s.damaged.filter((id) => id !== l.asset);
         log(
@@ -781,6 +814,13 @@
       .replace(/[^a-z0-9]/gi, "")
       .toUpperCase();
   function checkIn(l, by, cond) {
+    const m = s.metrics;
+    if (m.carried.includes(l.num)) {
+      m.carried = m.carried.filter((n) => n !== l.num);
+      l.metric = m.peeked ? "looked" : "clean";
+      m.closed++;
+      if (!m.peeked) m.clean++;
+    }
     l.back = true;
     l.backAt = now().short;
     l.backBy = by;
@@ -841,6 +881,7 @@
               : inRepair(unit)
                 ? unit.id + " is booked into the workshop."
                 : unit.id + " should be on the shelf in bin " + unit.bin + ".");
+        s.metrics.blocked++;
         commit();
         return;
       }
@@ -858,6 +899,7 @@
           : unit.id +
             " has no open slip, so nothing was changed. It should be " +
             (inRepair(unit) ? "in the workshop." : "on the shelf in bin " + unit.bin + ".");
+        s.metrics.blocked++;
         commit();
         return;
       }
@@ -1033,6 +1075,7 @@
       formError: "",
       quickError: "",
       damaged: Array.isArray(d.damaged) ? d.damaged.slice() : [],
+      metrics: { ...original().metrics, ...(d.metrics || {}) },
       loans: d.loans.map((l) => ({ ...l })),
       notes: d.notes.map((n) => ({ ...n })),
     };
