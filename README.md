@@ -2,6 +2,12 @@
 
 ## My submission: Open kits
 
+**Live demo:** https://rakeshsa10g-lab.github.io/campus-stores/ (or open `index.html`)
+
+**In three lines.** The desk is good at getting the right unit out. It loses track of a kit once it comes back in pieces and the shift changes. I kept the product and added **Open kits**, which keeps the kit, the person actually holding each item and the next action in one place, and makes check-in prove it has the right unit.
+
+**Try it in 60 seconds.** Open kits → Courtyard screening → **Issue kit** (pick SP-02, AD-12, Kabir Sen) → **Move to return time** → Quick check-in `PR-04`, then `SP-02` → on the adapter, **Someone else has it**: Leela Das, Sat 9 am → **Move to next morning** → read **Needs attention** → Quick check-in `AD-15` (refused, nothing changes) → `AD-12` (kit complete) → **Undo check-in** and open the slip's **History**.
+
 **Short answer: yes, I would keep this product, with one change.** The desk is good at getting the right unit out of the door. It is weak at tracking a kit once it comes back in pieces. My change adds an **Open kits** view that keeps each club's kit together from pickup to the last item back.
 
 Run it the same way as the original (open `index.html`). The app now opens on **Open kits**. Every original screen is still there.
